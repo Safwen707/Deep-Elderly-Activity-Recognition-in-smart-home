@@ -3,5 +3,5 @@
 
 1. Download the JSON file from Kaggle:  
    - https://www.kaggle.com/datasets/safweneessayes/m-and-d-sensors  
-2. Place the file in the `data/` directory.  
-3. Run `python main.py` to start the project.  
+2. Download the  filtered JSON file from Kaggle:  
+https://www.kaggle.com/datasets/safweneessayes/m-and-d-sensors-filtered
