@@ -4,9 +4,8 @@
 1. Download the JSON file from Kaggle:  
    - https://www.kaggle.com/datasets/safweneessayes/m-and-d-sensors  
 
-2. Download the  M_and_D_sensors_labeled_AllSensors.json file from Kaggle: 
- https://www.kaggle.com/datasets/safweneessayes/m-and-d-sensors-labeled-allsensors
-
+2. Download the  M_and_D_sensors_labeled_AllSensors.json and M_and_D_sensors_labeled_AllSensors.csv files from Kaggle: 
+https://www.kaggle.com/datasets/safweneessayes/m-and-d-sensors-labeled-allsensors
  This file is the result of the script activities-labeling. It consists of chunking the unlabeled data that is situated between the end of an activity and the beginning of another into chunks based on sudden changing sonsors and labeling them according to the files zoneTimeForEachActivity, Following&PrecedentActivitiesForEachActivity, and AllSensorsForEachActivities.
 
  3. Download the  featureExtracted_AllSensors_ExtendedTimeFeatures.txt file from Kaggle: 

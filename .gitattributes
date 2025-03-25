@@ -1,0 +1,6 @@
+LSTM_Model/event_based_segmentation/M_and_D_sensors_labeled_AllSensors.json filter=lfs diff=lfs merge=lfs -text
+LSTM_Model/event_based_segmentation/scaler_and_dependencies(w=5)/featureExtracted_AllSensors_ExtendedTimeFeatures(w=5).txt filter=lfs diff=lfs merge=lfs -text
+LSTM_Model/event_based_segmentation/featureExtracted(w=5).txt filter=lfs diff=lfs merge=lfs -text
+LSTM_Model/event_based_segmentation/featureExtracted(w=5).txt !text !filter !merge !diff
+LSTM_Model/event_based_segmentation/scaler_and_dependencies(w=5)/featureExtracted_AllSensors_ExtendedTimeFeatures(w=5).txt !text !filter !merge !diff
+LSTM_Model/event_based_segmentation/M_and_D_sensors_labeled_AllSensors.json !text !filter !merge !diff

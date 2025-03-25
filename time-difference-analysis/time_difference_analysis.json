@@ -1,0 +1,82 @@
+{
+    "total_entries": 1602980,
+    "total_time_differences": 1602979,
+    "basic_statistics": {
+        "min_diff": 0.0,
+        "max_diff": 33482.503214,
+        "mean_diff": 11.856303490433127,
+        "median_diff": 1.532688
+    },
+    "intervals": [
+        {
+            "interval": "Less than 1 second",
+            "lower_bound": 0,
+            "upper_bound": 1,
+            "count": 560832,
+            "percentage": 34.99
+        },
+        {
+            "interval": "1-5 seconds",
+            "lower_bound": 1,
+            "upper_bound": 5,
+            "count": 802711,
+            "percentage": 50.08
+        },
+        {
+            "interval": "5-10 seconds",
+            "lower_bound": 5,
+            "upper_bound": 10,
+            "count": 117304,
+            "percentage": 7.32
+        },
+        {
+            "interval": "10-30 seconds",
+            "lower_bound": 10,
+            "upper_bound": 30,
+            "count": 70167,
+            "percentage": 4.38
+        },
+        {
+            "interval": "30-60 seconds",
+            "lower_bound": 30,
+            "upper_bound": 60,
+            "count": 22815,
+            "percentage": 1.42
+        },
+        {
+            "interval": "1-5 minutes",
+            "lower_bound": 60,
+            "upper_bound": 300,
+            "count": 22742,
+            "percentage": 1.42
+        },
+        {
+            "interval": "5-10 minutes",
+            "lower_bound": 300,
+            "upper_bound": 600,
+            "count": 3015,
+            "percentage": 0.19
+        },
+        {
+            "interval": "10-30 minutes",
+            "lower_bound": 600,
+            "upper_bound": 1800,
+            "count": 2116,
+            "percentage": 0.13
+        },
+        {
+            "interval": "30-60 minutes",
+            "lower_bound": 1800,
+            "upper_bound": 3600,
+            "count": 526,
+            "percentage": 0.03
+        },
+        {
+            "interval": "More than 1 hour",
+            "lower_bound": 3600,
+            "upper_bound": "infinity",
+            "count": 751,
+            "percentage": 0.05
+        }
+    ]
+}
