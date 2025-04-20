@@ -1,4 +1,3 @@
-
 """
 Create_LSTM_Input.py
 
@@ -70,7 +69,6 @@ def extract_time_features(dt, prefix=""):
             f'{prefix}time_of_day_cos': 0
         }
     
-    # Extract basic time components
     hour = dt.hour
     minute = dt.minute
     second = dt.second
@@ -81,7 +79,6 @@ def extract_time_features(dt, prefix=""):
     # Calculate total time in seconds for the day (0-86399)
     time_of_day = hour * 3600 + minute * 60 + second
     
-    # Encode cyclical features
     hour_sin, hour_cos = encode_cyclical_feature(hour, 24)
     minute_sin, minute_cos = encode_cyclical_feature(minute, 60)
     second_sin, second_cos = encode_cyclical_feature(second, 60)
@@ -90,7 +87,6 @@ def extract_time_features(dt, prefix=""):
     day_of_week_sin, day_of_week_cos = encode_cyclical_feature(day_of_week, 7)
     time_of_day_sin, time_of_day_cos = encode_cyclical_feature(time_of_day, 86400)
     
-    # Return encoded features with optional prefix
     return {
         f'{prefix}hour_sin': hour_sin,
         f'{prefix}hour_cos': hour_cos,
@@ -107,6 +103,23 @@ def extract_time_features(dt, prefix=""):
         f'{prefix}time_of_day_sin': time_of_day_sin,
         f'{prefix}time_of_day_cos': time_of_day_cos
     }
+
+def get_event_datetime(event):
+    """
+    Safely extract a datetime object from an event.
+    Returns None if either the "date" or "time" key is missing or if parsing fails.
+    """
+    if 'date' not in event or 'time' not in event:
+        return None
+    date_str = event['date']
+    time_str = event['time']
+    try:
+        return datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M:%S.%f")
+    except ValueError:
+        try:
+            return datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M:%S")
+        except Exception:
+            return None
 
 # Updated create_dataset function with start/end times and duration
 def create_dataset(data, target_duration_seconds=300, tolerance_seconds=30):
@@ -125,11 +138,10 @@ def create_dataset(data, target_duration_seconds=300, tolerance_seconds=30):
     X, y = [], []
     all_sensors = [f"M{i:03d}" for i in range(1, 32)] + ["D001", "D003", "D004"]
 
-    # Store active activities with their start time and index
     global_active_activities = {}  # Format: {activity: (start_idx, start_dt)}
     last_majority_activity = None
 
-    # Define time feature names
+    # Feature names for time features
     start_time_feature_names = [
         'start_hour_sin', 'start_hour_cos', 'start_minute_sin', 'start_minute_cos',
         'start_day_sin', 'start_day_cos', 'start_month_sin', 'start_month_cos',
@@ -141,246 +153,127 @@ def create_dataset(data, target_duration_seconds=300, tolerance_seconds=30):
         'end_day_of_week_sin', 'end_day_of_week_cos'
     ]
 
-    # Keep track of current processed index
     current_idx = 0
 
     while current_idx < len(data):
-        # Get start time of the segment
-        try:
-            start_time = datetime.strptime(
-                f"{data[current_idx]['date']} {data[current_idx]['time']}", 
-                "%Y-%m-%d %H:%M:%S.%f"
-            )
-        except ValueError:
-            try:
-                start_time = datetime.strptime(
-                    f"{data[current_idx]['date']} {data[current_idx]['time']}", 
-                    "%Y-%m-%d %H:%M:%S"
-                )
-            except:
-                # Skip invalid entries
-                current_idx += 1
-                continue
+        # Get start time of the segment; skip if missing/unparsable
+        start_time = get_event_datetime(data[current_idx])
+        if start_time is None:
+            current_idx += 1
+            continue
 
-        # Initialisation de la séquence avec l'événement courant
         sequence_start_idx = current_idx
-        
-        # Exigence: Si une séquence ne comporte qu'une seule ligne et que la durée dépasse la borne supérieure
-        # Vérifier l'écart avec l'événement suivant pour décider si on continue avec cette ligne
+
+        # Check the next event's time if available
         next_idx = current_idx + 1
         next_time = None
         if next_idx < len(data):
-            try:
-                next_time = datetime.strptime(
-                    f"{data[next_idx]['date']} {data[next_idx]['time']}", 
-                    "%Y-%m-%d %H:%M:%S.%f"
-                )
-            except ValueError:
-                try:
-                    next_time = datetime.strptime(
-                        f"{data[next_idx]['date']} {data[next_idx]['time']}", 
-                        "%Y-%m-%d %H:%M:%S"
-                    )
-                except:
-                    next_time = None
-        
-        # Si la durée entre la ligne actuelle et la suivante dépasse la borne supérieure,
-        # ignorer la ligne actuelle et commencer avec la suivante
+            next_time = get_event_datetime(data[next_idx])
+
+        # If the time difference exceeds target + tolerance, skip this event
         if next_time and (next_time - start_time).total_seconds() > (target_duration_seconds + tolerance_seconds):
             current_idx += 1
             continue
 
-        # Calculate target end time for this segment
         target_end_time = start_time + timedelta(seconds=target_duration_seconds)
         min_end_time = target_end_time - timedelta(seconds=tolerance_seconds)
         max_end_time = target_end_time + timedelta(seconds=tolerance_seconds)
 
-        # Find the best segment end index within the tolerance range
         end_idx = current_idx + 1
         end_time = None
 
+        # Search for an event to mark the segment's end
         while end_idx < len(data) and end_idx < current_idx + 1000:  # Safety limit
-            try:
-                event_time = datetime.strptime(
-                    f"{data[end_idx]['date']} {data[end_idx]['time']}", 
-                    "%Y-%m-%d %H:%M:%S.%f"
-                )
-            except ValueError:
-                try:
-                    event_time = datetime.strptime(
-                        f"{data[end_idx]['date']} {data[end_idx]['time']}", 
-                        "%Y-%m-%d %H:%M:%S"
-                    )
-                except:
-                    # Skip invalid entries
-                    end_idx += 1
-                    continue
-            
-            # Exigence: Vérifier si la durée entre l'événement actuel et le précédent dépasse la borne supérieure
-            prev_idx = end_idx - 1
-            if prev_idx >= current_idx:
-                try:
-                    prev_time = datetime.strptime(
-                        f"{data[prev_idx]['date']} {data[prev_idx]['time']}", 
-                        "%Y-%m-%d %H:%M:%S.%f"
-                    )
-                except ValueError:
-                    try:
-                        prev_time = datetime.strptime(
-                            f"{data[prev_idx]['date']} {data[prev_idx]['time']}", 
-                            "%Y-%m-%d %H:%M:%S"
-                        )
-                    except:
-                        prev_time = None
-                
-                # Si la (n+1)ème ligne dépasse la borne supérieure de l'intervalle,
-                # terminer la séquence avec les n lignes précédentes
-                if prev_time and (event_time - prev_time).total_seconds() > (target_duration_seconds + tolerance_seconds):
-                    end_idx = prev_idx  # La séquence se termine à l'événement précédent
-                    try:
-                        end_time = datetime.strptime(
-                            f"{data[end_idx]['date']} {data[end_idx]['time']}", 
-                            "%Y-%m-%d %H:%M:%S.%f"
-                        )
-                    except ValueError:
-                        try:
-                            end_time = datetime.strptime(
-                                f"{data[end_idx]['date']} {data[end_idx]['time']}", 
-                                "%Y-%m-%d %H:%M:%S"
-                            )
-                        except:
-                            end_time = prev_time
-                    break
+            event_time = get_event_datetime(data[end_idx])
+            if event_time is None:
+                end_idx += 1
+                continue
 
-            # If we've reached the target duration (within tolerance)
+            # Check the time difference with the previous event
+            prev_idx = end_idx - 1
+            prev_time = None
+            if prev_idx >= current_idx:
+                prev_time = get_event_datetime(data[prev_idx])
+            if prev_time and (event_time - prev_time).total_seconds() > (target_duration_seconds + tolerance_seconds):
+                # End the segment at the previous event
+                end_idx = prev_idx
+                end_time = get_event_datetime(data[end_idx])
+                if end_time is None:
+                    end_time = prev_time
+                break
+
+            # If we've reached the target duration window
             if event_time >= min_end_time:
-                # If we're still within tolerance, this is our end point
                 if event_time <= max_end_time:
                     end_time = event_time
                     break
-                # If we've gone beyond the tolerance, use the previous index
                 else:
+                    # If beyond the tolerance, use the previous event instead
                     end_idx -= 1
-                    # Get the time of the previous event
-                    try:
-                        end_time = datetime.strptime(
-                            f"{data[end_idx]['date']} {data[end_idx]['time']}", 
-                            "%Y-%m-%d %H:%M:%S.%f"
-                        )
-                    except ValueError:
-                        try:
-                            end_time = datetime.strptime(
-                                f"{data[end_idx]['date']} {data[end_idx]['time']}", 
-                                "%Y-%m-%d %H:%M:%S"
-                            )
-                        except:
-                            end_time = start_time + timedelta(seconds=target_duration_seconds)
+                    end_time = get_event_datetime(data[end_idx])
+                    if end_time is None:
+                        end_time = start_time + timedelta(seconds=target_duration_seconds)
                     break
 
             end_idx += 1
 
-        # If we couldn't find a suitable end within tolerance, use whatever we have
+        # If we reach the end of the data, use the last event available
         if end_idx >= len(data):
             end_idx = len(data) - 1
-            try:
-                end_time = datetime.strptime(
-                    f"{data[end_idx]['date']} {data[end_idx]['time']}", 
-                    "%Y-%m-%d %H:%M:%S.%f"
-                )
-            except ValueError:
-                try:
-                    end_time = datetime.strptime(
-                        f"{data[end_idx]['date']} {data[end_idx]['time']}", 
-                        "%Y-%m-%d %H:%M:%S"
-                    )
-                except:
-                    end_time = start_time + timedelta(seconds=target_duration_seconds)
+            end_time = get_event_datetime(data[end_idx])
+            if end_time is None:
+                end_time = start_time + timedelta(seconds=target_duration_seconds)
 
-        # Extract the sequence for this time segment
         sequence = data[current_idx:end_idx+1]
 
-        # Exigence: Une séquence doit contenir au moins deux lignes pour être valide
+        # Ensure the sequence has at least two valid events
         if len(sequence) < 2:
             current_idx = end_idx + 1
             continue
 
-        # Calculate actual sequence duration
+        # Calculate sequence duration
         if end_time:
             sequence_duration_sec = (end_time - start_time).total_seconds()
         else:
             sequence_duration_sec = target_duration_seconds
 
-        # Normalize sequence duration
-        sequence_duration_norm = sequence_duration_sec / 86400
-        sequence_duration_norm = max(sequence_duration_norm, 0.0001)  # Avoid zero values
+        sequence_duration_norm = max(sequence_duration_sec / 86400, 0.0001)  # normalized over a day
 
-        # Copy global active activities with their complete history
         active_activities = global_active_activities.copy()
         activity_durations = {}
 
-        # Process events in the sequence to calculate activity durations
+        # Process events within the sequence to compute durations for activities
         for j, event in enumerate(sequence):
-            if event["activity"]:
+            if event.get("activity"):
                 activity_parts = event["activity"].replace(" ", "").split(",")
-                if len(activity_parts) != 2: continue
+                if len(activity_parts) != 2:
+                    continue
                 activity_name, action = activity_parts
 
-                # Parse datetime
-                try:
-                    event_dt = datetime.strptime(
-                        f"{event['date']} {event['time']}", 
-                        "%Y-%m-%d %H:%M:%S.%f"
-                    )
-                except ValueError:
-                    try:
-                        event_dt = datetime.strptime(
-                            f"{event['date']} {event['time']}", 
-                            "%Y-%m-%d %H:%M:%S"
-                        )
-                    except:
-                        event_dt = datetime.now()
+                event_dt = get_event_datetime(event)
+                if event_dt is None:
+                    event_dt = datetime.now()  # or consider skipping the event
 
-                # Exigence: Traiter le début et la fin d'une activité pour calculer sa durée
                 if action == "begin":
                     active_activities[activity_name] = (j, event_dt)
                 elif action == "end":
                     if activity_name in active_activities:
-                        start_idx, start_dt = active_activities[activity_name]
+                        start_idx_inner, start_dt = active_activities[activity_name]
                         duration_sec = (event_dt - start_dt).total_seconds()
-                        # Exigence: Additionner les durées pour la même activité si elle apparaît plusieurs fois
-                        if activity_name in activity_durations:
-                            activity_durations[activity_name] += duration_sec
-                        else:
-                            activity_durations[activity_name] = duration_sec
+                        activity_durations[activity_name] = activity_durations.get(activity_name, 0) + duration_sec
                         del active_activities[activity_name]
 
-        # Handle unfinished activities (activités commencées mais pas terminées)
-        for activity, (start_idx, start_dt) in active_activities.items():
-            try:
-                last_event_dt = datetime.strptime(
-                    f"{sequence[-1]['date']} {sequence[-1]['time']}", 
-                    "%Y-%m-%d %H:%M:%S.%f"
-                ) if sequence else datetime.now()
-            except ValueError:
-                try:
-                    last_event_dt = datetime.strptime(
-                        f"{sequence[-1]['date']} {sequence[-1]['time']}", 
-                        "%Y-%m-%d %H:%M:%S"
-                    ) if sequence else datetime.now()
-                except:
-                    last_event_dt = datetime.now()
-
+        # Handle activities that started but did not finish within the segment
+        for activity, (start_idx_inner, start_dt) in active_activities.items():
+            last_event_dt = get_event_datetime(sequence[-1])
+            if last_event_dt is None:
+                last_event_dt = datetime.now()
             duration_sec = (last_event_dt - start_dt).total_seconds()
-            # Exigence: Additionner les durées pour la même activité
-            if activity in activity_durations:
-                activity_durations[activity] += duration_sec
-            else:
-                activity_durations[activity] = duration_sec
+            activity_durations[activity] = activity_durations.get(activity, 0) + duration_sec
 
-        # Update global active activities for the next segment
         global_active_activities = active_activities.copy()
 
-        # Exigence: Déterminer la classe majoritaire en fonction de la durée de chaque activité
+        # Determine majority activity by duration
         if activity_durations:
             majority_activity = max(activity_durations.items(), key=lambda x: x[1])[0]
         else:
@@ -390,25 +283,25 @@ def create_dataset(data, target_duration_seconds=300, tolerance_seconds=30):
             majority_activity = last_majority_activity
         last_majority_activity = majority_activity
 
-        # Extract time features for start and end times
         start_features = extract_time_features(start_time, "start_")
         end_features = extract_time_features(end_time, "end_")
 
-        # Count sensors activations - CORRECTION: Count both "ON" and "OPEN" states
-        sensor_counts = [sum(1 for e in sequence if e["sensor"] == s and (e["state"] == "ON" or e["state"] == "OPEN")) for s in all_sensors]
+        # Count sensor activations (count states "ON" and "OPEN")
+        sensor_counts = [
+            sum(1 for e in sequence if e.get("sensor") == s and (e.get("state") == "ON" or e.get("state") == "OPEN"))
+            for s in all_sensors
+        ]
 
-        # Create feature vector with time features, duration, and sensor counts
         feature_vector = (
             [start_features[name] for name in start_time_feature_names] +
             [end_features[name] for name in end_time_feature_names] +
-            [sequence_duration_norm] +  # Using sequence duration
+            [sequence_duration_norm] +  # normalized duration
             sensor_counts
         )
 
         X.append(feature_vector)
         y.append(majority_activity)
 
-        # Move to the next segment
         current_idx = end_idx + 1
 
     return np.array(X, dtype=np.float32), np.array(y)
@@ -417,7 +310,6 @@ def save_dataset_to_file(X, y, filename="dataset_output.txt"):
     """
     Save the dataset to a readable text file, with named features for easy inspection.
     """
-    # Build the correct list of feature names based on create_dataset output
     feature_names = []
     
     # Time features for start (10 features)
@@ -439,10 +331,10 @@ def save_dataset_to_file(X, y, filename="dataset_output.txt"):
     feature_names.extend(start_features)
     feature_names.extend(end_features)
     
-    # Duration feature (1 feature)
+    # Duration feature
     feature_names.append("activity_duration_normalized")
     
-    # Sensor features (34 features)
+    # Sensor features (31 M-sensors and 3 additional sensors)
     for i in range(1, 32):
         feature_names.append(f"M{i:03d}")
     feature_names.extend(["D001", "D003", "D004"])
@@ -451,16 +343,13 @@ def save_dataset_to_file(X, y, filename="dataset_output.txt"):
         for i in range(len(X)):
             f.write(f"X[{i}]: [\n")
             
-            # Write time features (20 features)
             f.write("    # Time Features (20 features: 10 for start date, 10 for end date)\n")
             for j in range(20):
                 f.write(f"    '{feature_names[j]}': {X[i][j]},\n")
             
-            # Write duration feature
             duration_idx = 20
             f.write(f"    '{feature_names[duration_idx]}': {X[i][duration_idx]},  # Normalized activity duration\n")
             
-            # Write sensor features (remaining 34 features)
             f.write("    # Sensor Features (34 features)\n")
             for j in range(duration_idx + 1, len(feature_names)):
                 f.write(f"    '{feature_names[j]}': {X[i][j]}")

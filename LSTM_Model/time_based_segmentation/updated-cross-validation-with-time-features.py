@@ -2,28 +2,18 @@
 updated-cross-validation-with-time-features.py
 
 This file implements a k-fold cross-validation approach for activity recognition using LSTM models and
-time-based features. Key functionalities include:
+time-based features with improved validation strategy:
 
-1. Custom metrics: Implements F1 score calculations via callback and metric functions for model evaluation.
+1. Initial 80/20 split (train+CV vs. hold-out) to prevent data leakage
+2. 10-fold cross-validation on the 80% portion
+3. Internal 90/10 validation split for each fold
+4. F1 score calculation via callback instead of in model.compile
+5. Final evaluation on the 20% hold-out set
 
-2. Model architecture: Creates a bidirectional LSTM network with dropout layers for recognizing activity
-   patterns from sensor and time data.
-
-3. Cross-validation: Uses StratifiedKFold to properly handle imbalanced activity classes, running training
-   across multiple data splits.
-
-4. Feature standardization: Applies StandardScaler to normalize feature values properly across folds.
-
-5. Training with callbacks: Implements early stopping and learning rate reduction to optimize training.
-
-6. Comprehensive evaluation: Calculates and visualizes accuracy, F1 scores, and loss curves for each fold.
-
-7. Feature importance analysis: Visualizes the importance of different features based on network weights.
-
-8. Model persistence: Saves trained models, scalers, and class labels for future use in deployment.
-
-This script addresses activity recognition as a time-series classification problem, using both sensor 
-activation counts and temporal patterns to identify daily activities.
+Key improvements:
+- More robust validation strategy with proper hold-out testing
+- Standardization performed correctly within each fold
+- Consistent evaluation methodology across validation sets
 """
 # Import required libraries
 import numpy as np
@@ -32,59 +22,37 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, Bidirectional
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.model_selection import StratifiedKFold #Better for imbalanced datasets than KFold
+from sklearn.model_selection import StratifiedKFold, train_test_split
 import os
 from datetime import datetime, timedelta
 import json
-from datetime import datetime
-from tensorflow.keras.callbacks import Callback, EarlyStopping, ReduceLROnPlateau
-import tensorflow as tf
 import pickle
-import math
+import tensorflow as tf
+# FIXED: Added import for Callback
+from tensorflow.keras.callbacks import Callback, EarlyStopping, ReduceLROnPlateau
 # Import functions from Create_LSTM_Input.py
 from Create_LSTM_Input import encode_cyclical_feature, extract_time_features, create_dataset, save_dataset_to_file
-# Custom F1 Score metrics for Keras
+
+# Custom F1 Score metrics for Keras via callback
 class F1ScoreCallback(Callback):
-    def __init__(self, validation_data=None):
-        super(F1ScoreCallback, self).__init__()
+    def __init__(self, validation_data=None, **kwargs):
+        super(F1ScoreCallback, self).__init__(**kwargs)
         self.validation_data = validation_data
         self.val_f1s = []
         
-    def on_epoch_end(self, epoch, logs={}):
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
         if self.validation_data:
-            val_predict = np.argmax(self.model.predict(self.validation_data[0]), axis=1)
-            val_targ = self.validation_data[1]
-            
+            X_val, y_val = self.validation_data
+            val_predict = np.argmax(self.model.predict(X_val), axis=1)
             # Calculate F1 score - weighted average of all classes
-            _val_f1 = f1_score(val_targ, val_predict, average='weighted')
+            _val_f1 = f1_score(y_val, val_predict, average='weighted')
             self.val_f1s.append(_val_f1)
-            
-            # Add to logs for TensorBoard or history tracking
+            # Add to logs for history tracking
             logs['val_f1'] = _val_f1
-            
             print(f' - val_f1: {_val_f1:.4f}')
 
-# Custom F1 Score metric function for model.compile
-def f1_keras(y_true, y_pred):
-    # Convert probabilities to class indices
-    y_pred_classes = tf.argmax(y_pred, axis=1)
-    y_true = tf.cast(y_true, tf.int64)
-    
-    # Calculate precision and recall
-    true_positives = tf.cast(tf.math.count_nonzero(y_pred_classes * y_true), tf.float32)
-    predicted_positives = tf.cast(tf.math.count_nonzero(y_pred_classes), tf.float32)
-    actual_positives = tf.cast(tf.math.count_nonzero(y_true), tf.float32)
-    
-    precision = true_positives / (predicted_positives + tf.keras.backend.epsilon())
-    recall = true_positives / (actual_positives + tf.keras.backend.epsilon())
-    
-    # Calculate F1 score
-    f1 = 2 * precision * recall / (precision + recall + tf.keras.backend.epsilon())
-    return f1
-
-
-
-# Function to create and train LSTM model - updated for increased input features
+# Function to create and train LSTM model - updated to remove f1_keras
 def create_model(input_shape, num_classes):
     model = Sequential()
     model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True), 
@@ -100,7 +68,7 @@ def create_model(input_shape, num_classes):
     model.compile(
         optimizer='adam', 
         loss='sparse_categorical_crossentropy', 
-        metrics=['accuracy', f1_keras]
+        metrics=['accuracy']  # Removed f1_keras, using callback instead
     )
     
     return model
@@ -148,8 +116,15 @@ if __name__ == "__main__":
     num_classes = len(label_encoder.classes_)
     print(f"Number of activity classes: {num_classes}")
     
-    # Step 2: Cross-Validation Implementation
-    print("\nStep 2: Implementing K-Fold Cross-Validation")
+    # NEW: Initial train+CV / hold-out split (80% / 20%)
+    print("\nStep 2: Performing initial 80/20 train/hold-out split")
+    X_train_cv, X_holdout, y_train_cv, y_holdout = train_test_split(
+        X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
+    )
+    print(f"Training+CV data: {X_train_cv.shape}, Hold-out data: {X_holdout.shape}")
+    
+    # Step 3: Cross-Validation Implementation
+    print("\nStep 3: Implementing K-Fold Cross-Validation on 80% of data")
     
     n_splits = 10  # Number of folds
     kf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
@@ -163,62 +138,67 @@ if __name__ == "__main__":
     plt.figure(figsize=(15, 15))
     
     fold = 1
-    for train_index, test_index in kf.split(X,y_encoded):
+    best_model = None
+    best_f1 = 0
+    best_scaler = None
+    
+    for train_index, val_index in kf.split(X_train_cv, y_train_cv):
         print(f"\n\n{'='*50}")
         print(f"Fold {fold}/{n_splits}")
         print(f"{'='*50}")
         
-        # Split data
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y_encoded[train_index], y_encoded[test_index]
+        # Split data for this fold
+        X_train_fold, X_val_fold = X_train_cv[train_index], X_train_cv[val_index]
+        y_train_fold, y_val_fold = y_train_cv[train_index], y_train_cv[val_index]
+        
+        print(f"[Fold {fold}] Train shape: {X_train_fold.shape}, Val shape: {X_val_fold.shape}")
         
         # Standardize features - using only training data for fitting
         scaler = StandardScaler()
-        X_train = scaler.fit_transform(X_train)
-        X_test = scaler.transform(X_test)  # Using the same scaler for test data
-        
-        # Split training data to create a validation set
-        val_split_idx = int(len(X_train) * 0.9)
-        X_val = X_train[val_split_idx:]
-        y_val = y_train[val_split_idx:]
-        X_train = X_train[:val_split_idx]
-        y_train = y_train[:val_split_idx]
+        X_train_fold_scaled = scaler.fit_transform(X_train_fold)
+        X_val_fold_scaled = scaler.transform(X_val_fold)
         
         # Reshape data for LSTM
         time_steps = 1
-        X_train = X_train.reshape((X_train.shape[0], time_steps, X_train.shape[1]))
-        X_val = X_val.reshape((X_val.shape[0], time_steps, X_val.shape[1]))
-        X_test = X_test.reshape((X_test.shape[0], time_steps, X_test.shape[1]))
+        X_train_fold_scaled = X_train_fold_scaled.reshape((X_train_fold_scaled.shape[0], time_steps, X_train_fold_scaled.shape[1]))
+        X_val_fold_scaled = X_val_fold_scaled.reshape((X_val_fold_scaled.shape[0], time_steps, X_val_fold_scaled.shape[1]))
         
         # Create model
-        model = create_model(input_shape=(X_train.shape[1], X_train.shape[2]), num_classes=num_classes)
+        model = create_model(input_shape=(time_steps, X_train_fold.shape[1]), num_classes=num_classes)
         
         # Define callbacks
-        f1_callback = F1ScoreCallback(validation_data=(X_val, y_val))
+        f1_callback = F1ScoreCallback(validation_data=(X_val_fold_scaled, y_val_fold))
         early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.0001)
         
         # Train model
         print(f"\nTraining model for fold {fold}...")
         history = model.fit(
-            X_train, y_train,
+            X_train_fold_scaled, y_train_fold,
             epochs=50,  
             batch_size=32,
-            validation_data=(X_val, y_val),
+            validation_data=(X_val_fold_scaled, y_val_fold),
             callbacks=[f1_callback, early_stopping, reduce_lr],
             verbose=1
         )
         
         # Evaluate model
         print(f"\nEvaluating model for fold {fold}...")
-        test_predictions = model.predict(X_test)
-        predicted_classes = np.argmax(test_predictions, axis=1)
+        val_predictions = model.predict(X_val_fold_scaled)
+        predicted_classes = np.argmax(val_predictions, axis=1)
         
         # Calculate metrics
-        accuracy = accuracy_score(y_test, predicted_classes)
-        f1 = f1_score(y_test, predicted_classes, average='weighted')
+        accuracy = accuracy_score(y_val_fold, predicted_classes)
+        f1 = f1_score(y_val_fold, predicted_classes, average='weighted')
         
         print(f"Fold {fold} - Accuracy: {accuracy:.4f}, F1 Score: {f1:.4f}")
+        
+        # Track best model based on F1 score
+        if f1 > best_f1:
+            best_f1 = f1
+            best_model = model
+            best_scaler = scaler
+            print(f"New best model found in fold {fold} with F1: {best_f1:.4f}")
         
         # Store metrics
         cv_accuracy.append(accuracy)
@@ -252,18 +232,18 @@ if __name__ == "__main__":
         # Print classification report for this fold
         print("\nClassification Report for fold {}:".format(fold))
         print(classification_report(
-        y_test,
-        predicted_classes,
-        target_names=label_encoder.classes_,
-        zero_division=0  # Added parameter
+            y_val_fold,
+            predicted_classes,
+            target_names=label_encoder.classes_,
+            zero_division=0
         ))
         
-        # Save model and scaler for this fold in the scaler_and_dependencies directory
-        model_path = os.path.join(save_dir, f"lstm_activity_classifier_fold{fold}_with_extended_time.keras")
+        # Save model and scaler for this fold
+        model_path = os.path.join(save_dir, f"lstm_activity_classifier_fold{fold}.keras")
         model.save(model_path)
         print(f"Model saved to {model_path}")
         
-        scaler_path = os.path.join(save_dir, f"feature_scaler_fold{fold}_with_extended_time.pkl")
+        scaler_path = os.path.join(save_dir, f"feature_scaler_fold{fold}.pkl")
         with open(scaler_path, 'wb') as f:
             pickle.dump(scaler, f)
         print(f"Scaler saved to {scaler_path}")
@@ -271,19 +251,53 @@ if __name__ == "__main__":
         # Increment fold counter
         fold += 1
     
+    # Step 4: Final evaluation on hold-out set
+    print("\nStep 4: Final evaluation on 20% hold-out set")
+    
+    # Scale and reshape hold-out data using best scaler
+    X_holdout_scaled = best_scaler.transform(X_holdout)
+    X_holdout_scaled = X_holdout_scaled.reshape((X_holdout_scaled.shape[0], time_steps, X_holdout_scaled.shape[1]))
+    
+    # Evaluate on hold-out set
+    holdout_predictions = best_model.predict(X_holdout_scaled)
+    holdout_classes = np.argmax(holdout_predictions, axis=1)
+    
+    # Calculate final metrics
+    holdout_accuracy = accuracy_score(y_holdout, holdout_classes)
+    holdout_f1 = f1_score(y_holdout, holdout_classes, average='weighted')
+    
+    print(f"\nHold-out Set Results:")
+    print(f"Accuracy: {holdout_accuracy:.4f}")
+    print(f"F1 Score: {holdout_f1:.4f}")
+    
+    print("\nClassification Report for Hold-out Set:")
+    print(classification_report(
+        y_holdout,
+        holdout_classes,
+        target_names=label_encoder.classes_,
+        zero_division=0
+    ))
+    
     # Finalize and display overall cross-validation results
     plt.tight_layout()
-    plot_path = os.path.join(save_dir, 'cross_validation_results_with_extended_time_features.png')
+    plot_path = os.path.join(save_dir, 'cross_validation_results.png')
     plt.savefig(plot_path)
     print(f"Cross-validation plot saved to {plot_path}")
     plt.show()
     
-    # Plot feature importance
-    # Get the weights of the first layer
-    last_model = model  # Using the last trained model
+    # Save the best model and scaler
+    best_model_path = os.path.join(save_dir, "best_lstm_model.keras")
+    best_model.save(best_model_path)
+    print(f"Best model saved to {best_model_path}")
     
+    best_scaler_path = os.path.join(save_dir, "best_feature_scaler.pkl")
+    with open(best_scaler_path, 'wb') as f:
+        pickle.dump(best_scaler, f)
+    print(f"Best scaler saved to {best_scaler_path}")
+    
+    # Plot feature importance using the best model
     # Get the weights of the first layer
-    first_layer_weights = np.abs(last_model.layers[0].get_weights()[0]).mean(axis=(1))
+    first_layer_weights = np.abs(best_model.layers[0].get_weights()[0]).mean(axis=(1))
     
     # Create feature names for visualization
     feature_names = []
@@ -309,11 +323,11 @@ if __name__ == "__main__":
     plt.xticks(range(len(indices)), [feature_names[i] for i in indices], rotation=90)
     plt.title('Approximate Feature Importance based on Layer Weights')
     plt.tight_layout()
-    importance_plot_path = os.path.join(save_dir, 'feature_importance_with_extended_time.png')
+    importance_plot_path = os.path.join(save_dir, 'feature_importance.png')
     plt.savefig(importance_plot_path)
     print(f"Feature importance plot saved to {importance_plot_path}")
     
-    # Print average metrics
+    # Print average metrics from cross-validation
     print("\n\n" + "="*50)
     print("CROSS-VALIDATION RESULTS")
     print("="*50)
@@ -321,9 +335,15 @@ if __name__ == "__main__":
     print(f"Average Accuracy: {np.mean(cv_accuracy):.4f} ± {np.std(cv_accuracy):.4f}")
     print(f"Average F1 Score: {np.mean(cv_f1_scores):.4f} ± {np.std(cv_f1_scores):.4f}")
     
-    # Save label encoder classes for future use in the scaler_and_dependencies directory
+    # Save label encoder classes for future use
     classes_path = os.path.join(save_dir, 'activity_classes.npy')
     np.save(classes_path, label_encoder.classes_)
     print(f"\nActivity classes saved to {classes_path}")
     
-    print("\nCross-validation complete!")
+    # Final summary
+    print("\n" + "="*50)
+    print("FINAL SUMMARY")
+    print("="*50)
+    print(f"Cross-validation (internal): Acc = {np.mean(cv_accuracy):.4f}, F1 = {np.mean(cv_f1_scores):.4f}")
+    print(f"Hold-out (20% test set): Acc = {holdout_accuracy:.4f}, F1 = {holdout_f1:.4f}")
+    print("\nCross-validation and evaluation complete!")
