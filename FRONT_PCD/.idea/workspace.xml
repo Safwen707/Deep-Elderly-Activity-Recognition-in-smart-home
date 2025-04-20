@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="BnAndroidLogFilters">
+    <option name="TOOL_WINDOW_CONFIGURED_FILTER" value="Show only selected application" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="b2ac9c6d-69b3-41b5-aaa7-6cb18d67a072" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/MyNewApp.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/App.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Constants/Colors.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/DarkMode.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/Google.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/Hands-On_Machine_Learning_with_Scikit-Learn-Keras-and-TensorFlow-2nd-Edition-Aurelien-Geron.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/Old.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/Old2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/Old3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/Oldlady.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/Oldlady2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/Oldman.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/adaptive-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/favicon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/img.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/splash-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/components/AlreadySignedButton.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/components/Button.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/config/firebase.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/config/profileService.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/config/settingsService.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/contexts/SettingsContext.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hooks/useDynamicStyles.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/index.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/screens/ForgotPassword.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/screens/Index.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/screens/Login.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/screens/Profile.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/screens/Settings.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/screens/Signup.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/screens/Welcome.js" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="JavaScript File" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="2vjqEYqXVEoruzLCxEaLn9thvBa" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;js.ns.project&quot;: &quot;true&quot;,
+    &quot;js.ns.project.flavor&quot;: &quot;JavaScript&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Zied2/MyNewApp/assets&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Program Files\\JetBrains\\WebStorm 2024.3.5\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="ReactDesignerToolWindowState">
+    <option name="myId2Visible">
+      <map>
+        <entry key="com.intellij.reactbuddy.reactComponents" value="false" />
+        <entry key="com.intellij.reactbuddy.reactInspector" value="false" />
+        <entry key="com.intellij.reactbuddy.storybook" value="false" />
+      </map>
+    </option>
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Zied2\MyNewApp\assets" />
+      <recent name="C:\Users\Zied2\MyNewApp" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Zied2\MyNewApp\config" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-WS-243.26053.12" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="b2ac9c6d-69b3-41b5-aaa7-6cb18d67a072" name="Changes" comment="" />
+      <created>1744668719253</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1744668719253</updated>
+      <workItem from="1744668720274" duration="1100000" />
+      <workItem from="1744671098277" duration="122000" />
+      <workItem from="1744671227725" duration="24000" />
+      <workItem from="1744833595130" duration="233000" />
+      <workItem from="1744833879929" duration="5178000" />
+      <workItem from="1744840346128" duration="8623000" />
+      <workItem from="1744889699415" duration="19883000" />
+      <workItem from="1745096415108" duration="9070000" />
+      <workItem from="1745151982499" duration="1426000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
