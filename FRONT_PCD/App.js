@@ -10,7 +10,10 @@ import Signup from './screens/Signup';
 import ForgotPassword from './screens/ForgotPassword';
 import Profile from './screens/Profile';
 import Settings from './screens/Settings';
-
+import HomeScreen from './screens/HomeScreen';
+import ActivityDetailsScreen from './screens/ActivityDetails';
+import HistoriqueScreen from './screens/HistoriqueScreen';
+import ReviewScreen from './screens/ReviewScreen';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -52,6 +55,10 @@ export default function App() {
                         component={Settings}
                         options={{ title: 'Settings' }}
                     />
+                    <Stack.Screen name="Dashboard" component={HomeScreen} />
+                    <Stack.Screen name="Details" component={ActivityDetailsScreen} />
+                    <Stack.Screen name="Historique" component={HistoriqueScreen} />
+                    <Stack.Screen name="ReviewScreen" component={ReviewScreen} />
                 </Stack.Navigator>
             </NavigationContainer>
         </GestureHandlerRootView>
