@@ -14,6 +14,7 @@ import HomeScreen from './screens/HomeScreen';
 import ActivityDetailsScreen from './screens/ActivityDetails';
 import HistoriqueScreen from './screens/HistoriqueScreen';
 import ReviewScreen from './screens/ReviewScreen';
+import DashboardScreen from './screens/DashBoardScreen';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -59,6 +60,7 @@ export default function App() {
                     <Stack.Screen name="Details" component={ActivityDetailsScreen} />
                     <Stack.Screen name="Historique" component={HistoriqueScreen} />
                     <Stack.Screen name="ReviewScreen" component={ReviewScreen} />
+                    <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
                 </Stack.Navigator>
             </NavigationContainer>
         </GestureHandlerRootView>

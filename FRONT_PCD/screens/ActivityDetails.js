@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { AntDesign, Ionicons, MaterialCommunityIcons, Feather, FontAwesome } from '@expo/vector-icons';
-
+import DashboardScreen from './DashBoardScreen';
 export default function ActivityDetailsScreen({ navigation, route }) {
   const getF1_ScoreColor = (F1_Score) => {
     const F1_ScoreValue = parseFloat(F1_Score);
@@ -9,7 +9,14 @@ export default function ActivityDetailsScreen({ navigation, route }) {
     if (F1_ScoreValue >= 0.5) return "#f1c40f"; 
     return "#e74c3c"; 
   };
-
+  const goToDashboard = () => {
+    navigation.navigate('DashboardScreen', {
+      prediction: route.params.prediction,
+      F1_Score: route.params.F1_Score,
+      currentBatch: route.params.currentBatch,
+    });
+  };
+  
   const formatF1_Score = (F1_Score) => {
     if (typeof F1_Score === 'string' && F1_Score.includes('%')) return F1_Score;
     return `${(parseFloat(F1_Score) * 100).toFixed(1)}%`;
@@ -60,12 +67,22 @@ export default function ActivityDetailsScreen({ navigation, route }) {
           </View>
 
           {/* Confidence Badge */}
+          <View style={styles.badgeAndButtonRow}>
           <View style={[styles.F1_ScoreBadge, { backgroundColor: getF1_ScoreColor(route.params.F1_Score) }]}>
             <Ionicons name="stats-chart" size={18} color="white" />
             <Text style={styles.F1_ScoreBadgeText}>
               F1 Score: {formatF1_Score(route.params.F1_Score)}
             </Text>
           </View>
+
+          <TouchableOpacity 
+            style={styles.moreDetailsButton} 
+            onPress={goToDashboard}
+          >
+            <Text style={styles.moreDetailsText}>More Details</Text>
+          </TouchableOpacity>
+        </View>
+
 
           {/* Details */}
           <View style={styles.detailsContainer}>
@@ -254,4 +271,24 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginLeft: 10,
   },
+  badgeAndButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  
+  moreDetailsButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    backgroundColor: '#3498db',
+    borderRadius: 10,
+  },
+  
+  moreDetailsText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  
 });
