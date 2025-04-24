@@ -33,16 +33,29 @@ const Settings = () => {
     const { settings, updateSettings, loading, error } = useContext(SettingsContext);
     const { styles, backgroundImage, colors } = useDynamicStyles();
 
-    // Resolve all colors upfront
-    const primaryColor = colors.primary;
-    const textColor = colors.text;
-    const iconColor = colors.iconColor;
-    const inputBackgroundColor = colors.inputBackground;
-    const borderColor = colors.border;
-    const secondaryTextColor = colors.secondaryText;
-    const dangerColor = colors.danger;
-    const cardBackgroundColor = colors.cardBackground;
-    const panelBackgroundColor = colors.panel;
+    // Fallback colors if undefined
+    const safeColors = colors || {
+        primary: '#4A90E2',
+        text: '#000000',
+        iconColor: '#4A90E2',
+        inputBackground: '#f5f5f5',
+        border: '#dddddd',
+        secondaryText: '#666666',
+        danger: '#ff4444',
+        cardBackground: '#f9f9f9',
+        panel: '#ffffff'
+    };
+
+    // Resolve all colors with fallbacks
+    const primaryColor = safeColors.primary;
+    const textColor = safeColors.text;
+    const iconColor = safeColors.iconColor;
+    const inputBackgroundColor = safeColors.inputBackground;
+    const borderColor = safeColors.border;
+    const secondaryTextColor = safeColors.secondaryText;
+    const dangerColor = safeColors.danger;
+    const cardBackgroundColor = safeColors.cardBackground;
+    const panelBackgroundColor = safeColors.panel;
 
     // Animation refs
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -68,12 +81,12 @@ const Settings = () => {
         await updateSettings(newSettings);
     };
 
-    const toggleDarkMode = () => handleSettingChange('darkMode', !settings.darkMode);
-    const toggleNotifications = () => handleSettingChange('notificationsEnabled', !settings.notificationsEnabled);
-    const toggleEmergencyAlerts = () => handleSettingChange('emergencyAlertsEnabled', !settings.emergencyAlertsEnabled);
+    const toggleDarkMode = () => handleSettingChange('darkMode', !settings?.darkMode);
+    const toggleNotifications = () => handleSettingChange('notificationsEnabled', !settings?.notificationsEnabled);
+    const toggleEmergencyAlerts = () => handleSettingChange('emergencyAlertsEnabled', !settings?.emergencyAlertsEnabled);
 
     const changeLanguage = () => {
-        const newLanguage = settings.language === 'english' ? 'french' : 'english';
+        const newLanguage = settings?.language === 'english' ? 'french' : 'english';
         handleSettingChange('language', newLanguage);
     };
 
@@ -88,12 +101,12 @@ const Settings = () => {
     };
 
     const getLanguageDisplayName = () => {
-        return settings.language === 'english' ? 'English' : 'Français';
+        return settings?.language === 'english' ? 'English' : 'Français';
     };
 
-    if (loading) {
+    if (loading || !settings) {
         return (
-            <View style={styles.loadingContainer}>
+            <View style={[styles.loadingContainer || {}, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
                 <ActivityIndicator size="large" color={primaryColor} />
             </View>
         );
@@ -101,7 +114,7 @@ const Settings = () => {
 
     if (error) {
         return (
-            <View style={styles.loadingContainer}>
+            <View style={[styles.loadingContainer || {}, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
                 <Text style={{ color: dangerColor }}>{error}</Text>
             </View>
         );
@@ -110,25 +123,25 @@ const Settings = () => {
     return (
         <ImageBackground
             source={backgroundImage}
-            style={styles.background}
+            style={styles.background || {}}
             resizeMode="cover"
-            blurRadius={settings.darkMode ? 10 : 0}
+            blurRadius={settings?.darkMode ? 10 : 0}
         >
-            <SafeAreaView style={styles.safeArea}>
-                <View style={styles.header}>
+            <SafeAreaView style={styles.safeArea || {}}>
+                <View style={styles.header || {}}>
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}
-                        style={[styles.backButton, { backgroundColor: cardBackgroundColor }]}
+                        style={[styles.backButton || {}, { backgroundColor: cardBackgroundColor }]}
                     >
                         <ArrowLeftIcon size={24} color={textColor} />
                     </TouchableOpacity>
-                    <Text style={[styles.headerTitle, { color: textColor }]}>Settings</Text>
+                    <Text style={[styles.headerTitle || {}, { color: textColor }]}>Settings</Text>
                     <View style={{ width: 24 }} />
                 </View>
 
                 <Animated.View
                     style={[
-                        styles.formContainer,
+                        styles.formContainer || {},
                         {
                             opacity: fadeAnim,
                             transform: [{ translateY: slideUpAnim }],
@@ -137,20 +150,20 @@ const Settings = () => {
                     ]}
                 >
                     <ScrollView
-                        style={styles.formScroll}
-                        contentContainerStyle={styles.formContent}
+                        style={styles.formScroll || {}}
+                        contentContainerStyle={styles.formContent || {}}
                         showsVerticalScrollIndicator={false}
                     >
                         {/* Appearance Section */}
-                        <Text style={[styles.sectionTitle, { color: textColor }]}>Appearance</Text>
-                        <View style={styles.settingItem}>
-                            <View style={styles.settingIcon}>
+                        <Text style={[styles.sectionTitle || {}, { color: textColor }]}>Appearance</Text>
+                        <View style={styles.settingItem || {}}>
+                            <View style={styles.settingIcon || {}}>
                                 {settings.darkMode ? (
                                     <SunIcon size={24} color={iconColor} />
                                 ) : (
                                     <MoonIcon size={24} color={iconColor} />
                                 )}
-                                <Text style={[styles.settingText, { color: textColor }]}>Dark Mode</Text>
+                                <Text style={[styles.settingText || {}, { color: textColor }]}>Dark Mode</Text>
                             </View>
                             <Switch
                                 value={settings.darkMode}
@@ -161,11 +174,11 @@ const Settings = () => {
                         </View>
 
                         {/* Notifications Section */}
-                        <Text style={[styles.sectionTitle, { color: textColor }]}>Notifications</Text>
-                        <View style={styles.settingItem}>
-                            <View style={styles.settingIcon}>
+                        <Text style={[styles.sectionTitle || {}, { color: textColor }]}>Notifications</Text>
+                        <View style={styles.settingItem || {}}>
+                            <View style={styles.settingIcon || {}}>
                                 <BellIcon size={24} color={iconColor} />
-                                <Text style={[styles.settingText, { color: textColor }]}>Enable Notifications</Text>
+                                <Text style={[styles.settingText || {}, { color: textColor }]}>Enable Notifications</Text>
                             </View>
                             <Switch
                                 value={settings.notificationsEnabled}
@@ -175,10 +188,10 @@ const Settings = () => {
                             />
                         </View>
 
-                        <View style={styles.settingItem}>
-                            <View style={styles.settingIcon}>
+                        <View style={styles.settingItem || {}}>
+                            <View style={styles.settingIcon || {}}>
                                 <ShieldCheckIcon size={24} color={iconColor} />
-                                <Text style={[styles.settingText, { color: textColor }]}>Emergency Alerts</Text>
+                                <Text style={[styles.settingText || {}, { color: textColor }]}>Emergency Alerts</Text>
                             </View>
                             <Switch
                                 value={settings.emergencyAlertsEnabled}
@@ -189,42 +202,42 @@ const Settings = () => {
                         </View>
 
                         {/* Language Section */}
-                        <Text style={[styles.sectionTitle, { color: textColor }]}>Language</Text>
+                        <Text style={[styles.sectionTitle || {}, { color: textColor }]}>Language</Text>
                         <TouchableOpacity
-                            style={styles.settingItem}
+                            style={styles.settingItem || {}}
                             onPress={changeLanguage}
                         >
-                            <View style={styles.settingIcon}>
+                            <View style={styles.settingIcon || {}}>
                                 <GlobeAltIcon size={24} color={iconColor} />
-                                <Text style={[styles.settingText, { color: textColor }]}>App Language</Text>
+                                <Text style={[styles.settingText || {}, { color: textColor }]}>App Language</Text>
                             </View>
-                            <View style={styles.languageValue}>
-                                <Text style={[styles.languageText, { color: textColor }]}>{getLanguageDisplayName()}</Text>
-                                <Text style={[styles.languageArrow, { color: textColor }]}>›</Text>
+                            <View style={styles.languageValue || {}}>
+                                <Text style={[styles.languageText || {}, { color: textColor }]}>{getLanguageDisplayName()}</Text>
+                                <Text style={[styles.languageArrow || {}, { color: textColor }]}>›</Text>
                             </View>
                         </TouchableOpacity>
 
                         {/* Account Section */}
-                        <Text style={[styles.sectionTitle, { color: textColor }]}>Account</Text>
-                        <TouchableOpacity style={styles.settingItem}>
-                            <Text style={[styles.settingText, { color: textColor }]}>Change Password</Text>
+                        <Text style={[styles.sectionTitle || {}, { color: textColor }]}>Account</Text>
+                        <TouchableOpacity style={styles.settingItem || {}}>
+                            <Text style={[styles.settingText || {}, { color: textColor }]}>Change Password</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.settingItem}>
-                            <Text style={[styles.settingText, { color: textColor }]}>Privacy Policy</Text>
+                        <TouchableOpacity style={styles.settingItem || {}}>
+                            <Text style={[styles.settingText || {}, { color: textColor }]}>Privacy Policy</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.settingItem}>
-                            <Text style={[styles.settingText, { color: textColor }]}>Terms of Service</Text>
+                        <TouchableOpacity style={styles.settingItem || {}}>
+                            <Text style={[styles.settingText || {}, { color: textColor }]}>Terms of Service</Text>
                         </TouchableOpacity>
 
                         {/* Logout Button */}
                         <TouchableOpacity
-                            style={[styles.logoutButton, { backgroundColor: cardBackgroundColor }]}
+                            style={[styles.logoutButton || {}, { backgroundColor: cardBackgroundColor }]}
                             onPress={handleLogout}
                         >
-                            <Text style={[styles.logoutText, { color: dangerColor }]}>Log Out</Text>
+                            <Text style={[styles.logoutText || {}, { color: dangerColor }]}>Log Out</Text>
                         </TouchableOpacity>
 
-                        <Text style={[styles.versionText, { color: secondaryTextColor }]}>
+                        <Text style={[styles.versionText || {}, { color: secondaryTextColor }]}>
                             Version 1.0.0
                         </Text>
                     </ScrollView>

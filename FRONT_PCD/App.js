@@ -56,7 +56,7 @@ export default function App() {
                         component={Settings}
                         options={{ title: 'Settings' }}
                     />
-                    <Stack.Screen name="Dashboard" component={HomeScreen} />
+                    <Stack.Screen name="HomeScreen" component={HomeScreen} />
                     <Stack.Screen name="Details" component={ActivityDetailsScreen} />
                     <Stack.Screen name="Historique" component={HistoriqueScreen} />
                     <Stack.Screen name="ReviewScreen" component={ReviewScreen} />

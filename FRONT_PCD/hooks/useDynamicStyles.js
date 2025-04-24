@@ -4,7 +4,8 @@ import { SettingsContext } from '../contexts/SettingsContext';
 
 export const useDynamicStyles = () => {
     const { settings } = useContext(SettingsContext);
-    const isDarkMode = settings.darkMode;
+
+    const isDarkMode = settings?.darkMode || false;
 
     const colors = {
 
@@ -15,14 +16,14 @@ export const useDynamicStyles = () => {
         background: isDarkMode ? '#121212' : '#ffffff',
         text: isDarkMode ? '#ffffff' : '#000000',
         secondaryText: isDarkMode ? '#aaaaaa' : '#666666',
-        primary: '#4A90E2',
+        primary: '#4A90E2', // This is the color being accessed
         inputBackground: isDarkMode ? '#333333' : '#f5f5f5',
         cardBackground: isDarkMode ? '#1e1e1e' : '#f9f9f9',
         border: isDarkMode ? '#444444' : '#dddddd',
         danger: '#ff4444',
         placeholder: isDarkMode ? '#666666' : '#999999',
         tabBar: isDarkMode ? '#1e1e1e' : '#ffffff',
-        tabBarActive: '#4A90E2', // Using primary color directly
+        tabBarActive: '#4A90E2',
         tabBarInactive: isDarkMode ? '#888' : '#ccc',
         success: '#4CAF50',
         warning: '#FFC107',
@@ -246,5 +247,5 @@ export const useDynamicStyles = () => {
         ? require('../assets/DarkMode.png')
         : require('../assets/Oldman.png');
 
-    return { styles, backgroundImage };
+    return { styles, backgroundImage,colors };
 };

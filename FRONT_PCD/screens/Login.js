@@ -48,7 +48,7 @@ const Login = () => {
         try {
             await signInWithEmailAndPassword(auth, email, password);
             // Navigate to Profile page after successful login
-            navigation.navigate('Profile');
+            navigation.navigate('HomeScreen');
         } catch (err) {
             let errorMessage = 'Login failed';
 

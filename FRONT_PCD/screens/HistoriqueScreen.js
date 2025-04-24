@@ -1,75 +1,63 @@
-// src/screens/HistoriqueScreen.js
 import React, { useState, useEffect } from 'react';
-import { 
-  Text, 
-  View, 
-  StyleSheet, 
-  TouchableOpacity, 
+import {
+  Text,
+  View,
+  StyleSheet,
+  TouchableOpacity,
   FlatList,
   TextInput,
   Modal,
-  ScrollView
+  ScrollView,
+  ImageBackground,
+  SafeAreaView
 } from 'react-native';
-import { AntDesign, Feather, Ionicons } from '@expo/vector-icons';
+import { ArrowLeftIcon, UserIcon} from 'react-native-heroicons/solid';
+import { Feather } from '@expo/vector-icons';
+import { useDynamicStyles } from '../hooks/useDynamicStyles';
 
 export default function HistoriqueScreen({ navigation, route }) {
-  const today = new Date().toDateString();
-  // We'll receive aiResults from the route params when navigating to this screen
+  const { styles, backgroundImage, colors } = useDynamicStyles();
   const { aiResults = [] } = route.params || {};
-  
-  // State for search and filters
+
+  // State management
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filteredResults, setFilteredResults] = useState([...aiResults].reverse());
-  
-  // Filter options
   const [filterByName, setFilterByName] = useState('');
   const [filterByDate, setFilterByDate] = useState('');
   const [filterByTime, setFilterByTime] = useState('');
-  const [timeFilterType, setTimeFilterType] = useState('before'); // 'before', 'after', 'between'
-  
-  // Apply filters whenever search or filter values change
+  const [timeFilterType, setTimeFilterType] = useState('before');
+
+  // Apply filters
   useEffect(() => {
-    applyFilters();
-  }, [searchQuery, filterByName, filterByDate, filterByTime, timeFilterType]);
-  
-  // Filter function
-  const applyFilters = () => {
     let results = [...aiResults].reverse();
-    
-    // Apply search query
+
     if (searchQuery) {
-      results = results.filter(item => 
-        item.prediction.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.timestamp.toLowerCase().includes(searchQuery.toLowerCase())
+      results = results.filter(item =>
+          item.prediction.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.timestamp.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    
-    // Apply name filter
+
     if (filterByName) {
-      results = results.filter(item => 
-        item.prediction.toLowerCase().includes(filterByName.toLowerCase())
+      results = results.filter(item =>
+          item.prediction.toLowerCase().includes(filterByName.toLowerCase())
       );
     }
-    
-    // Apply date filter
+
     if (filterByDate) {
       results = results.filter(item => {
-        // Extract date part from timestamp (assuming format like "6:00:31 PM")
-        // In a real app, you would need to parse actual dates from your timestamps
-        const itemDate = item.timestamp.split(' ')[0]; // This is simplified
+        const itemDate = item.timestamp.split(' ')[0];
         return itemDate.includes(filterByDate);
       });
     }
-    
-    // Apply time filter
+
     if (filterByTime) {
       results = results.filter(item => {
-        // Extract time from timestamp (assuming format has time like "6:00:31 PM")
         const timeStr = item.timestamp;
         const timeNum = parseTimeToMinutes(timeStr);
         const filterTimeNum = parseTimeToMinutes(filterByTime);
-        
+
         if (timeFilterType === 'before') {
           return timeNum <= filterTimeNum;
         } else if (timeFilterType === 'after') {
@@ -78,32 +66,28 @@ export default function HistoriqueScreen({ navigation, route }) {
         return true;
       });
     }
-    
+
     setFilteredResults(results);
-  };
-  
-  // Helper function to convert time string to minutes for comparison
+  }, [searchQuery, filterByName, filterByDate, filterByTime, timeFilterType]);
+
   const parseTimeToMinutes = (timeStr) => {
     try {
-      // Extract time components
       const timeParts = timeStr.match(/(\d+):(\d+):?(\d+)?\s*(AM|PM)?/i);
       if (!timeParts) return 0;
-      
+
       let hours = parseInt(timeParts[1]);
       const minutes = parseInt(timeParts[2]);
       const isPM = timeParts[4] && timeParts[4].toUpperCase() === 'PM';
-      
-      // Convert to 24-hour format
+
       if (isPM && hours < 12) hours += 12;
       if (!isPM && hours === 12) hours = 0;
-      
+
       return hours * 60 + minutes;
     } catch (e) {
       return 0;
     }
   };
-  
-  // Reset all filters
+
   const resetFilters = () => {
     setFilterByName('');
     setFilterByDate('');
@@ -112,297 +96,306 @@ export default function HistoriqueScreen({ navigation, route }) {
     setShowFilterModal(false);
   };
 
-  // Header component for FlatList
   const renderHeader = () => (
-    <>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <AntDesign name="leftcircle" size={32} color="#3498db" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Historic </Text>
-      </View>
-      
-      <Text style={styles.subtitle}>Review past activities detected by the system.</Text>
-      
-      {/* Search and Filter Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Feather name="search" size={20} color="#666" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search activities..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Feather name="x" size={20} color="#666" />
-            </TouchableOpacity>
-          ) : null}
-        </View>
-        
-        <TouchableOpacity 
-          style={styles.filterButton}
-          onPress={() => setShowFilterModal(true)}
-        >
-          <Feather 
-            name="filter" 
-            size={22} 
-            color={filterByName || filterByDate || filterByTime ? "#3498db" : "#666"} 
-          />
-        </TouchableOpacity>
-      </View>
-      
-      {/* Active Filters Display */}
-      {(filterByName || filterByDate || filterByTime) && (
-        <View style={styles.activeFilters}>
-          <Text style={styles.activeFiltersText}>Active filters:</Text>
-          {filterByName && (
-            <View style={styles.filterTag}>
-              <Text style={styles.filterTagText}>Name: {filterByName}</Text>
-            </View>
-          )}
-          {filterByDate && (
-            <View style={styles.filterTag}>
-              <Text style={styles.filterTagText}>Date: {filterByDate}</Text>
-            </View>
-          )}
-          {filterByTime && (
-            <View style={styles.filterTag}>
-              <Text style={styles.filterTagText}>
-                Time: {timeFilterType} {filterByTime}
-              </Text>
-            </View>
-          )}
-          <TouchableOpacity onPress={resetFilters}>
-            <Text style={styles.clearFiltersText}>Clear all</Text>
+      <>
+        {/* Header */}
+        <View style={[localStyles.header, { backgroundColor: 'rgba(30, 30, 30, 0.7)' }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <ArrowLeftIcon size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={localStyles.headerTitle}>Activity History</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+            <UserIcon size={24} color="#fff" />
           </TouchableOpacity>
         </View>
-      )}
-      
-      {/* Date Card */}
-      <View style={styles.dateCard}>
-        <Text style={styles.cardTitle}>Timeline</Text>
-        <Text style={styles.date}>{today}</Text>
-      </View>
-      
-      {/* Empty state - shown when no results */}
-      {filteredResults.length === 0 && (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyText}>No matching activities found.</Text>
-          <Text style={styles.emptySubtext}>
-            {aiResults.length > 0 
-              ? "Try adjusting your search or filters."
-              : "Activities will appear here once detected."}
-          </Text>
+
+        {/* Search and Filter */}
+        <View style={localStyles.searchContainer}>
+          <View style={[localStyles.searchBar, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+            <TextInput
+                style={[localStyles.searchInput, { color: '#fff' }]}
+                placeholder="Search activities..."
+                placeholderTextColor="#95A5A6"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+            />
+            {searchQuery ? (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Text style={{ color: '#95A5A6' }}>✕</Text>
+                </TouchableOpacity>
+            ) : null}
+          </View>
+
+          <TouchableOpacity
+              style={[localStyles.filterButton, {
+                backgroundColor: filterByName || filterByDate || filterByTime ?
+                    'rgba(52, 152, 219, 0.2)' : 'rgba(255,255,255,0.1)'
+              }]}
+              onPress={() => setShowFilterModal(true)}
+          >
+            <Feather name="filter" size={20} color={
+              filterByName || filterByDate || filterByTime ? "#4FC3F7" : "#95A5A6"
+            } />
+          </TouchableOpacity>
         </View>
-      )}
-      
-      {/* Header for results section */}
-      {filteredResults.length > 0 && (
-        <View style={styles.historyHeader}>
-          <Text style={styles.cardTitle}>All Detected Activities</Text>
-          <Text style={styles.resultCount}>{filteredResults.length} results</Text>
-        </View>
-      )}
-    </>
+
+        {/* Active Filters */}
+        {(filterByName || filterByDate || filterByTime) && (
+            <View style={localStyles.activeFilters}>
+              <Text style={[localStyles.activeFiltersText, { color: '#95A5A6' }]}>Active filters:</Text>
+              {filterByName && (
+                  <View style={[localStyles.filterTag, { backgroundColor: 'rgba(52, 152, 219, 0.2)' }]}>
+                    <Text style={[localStyles.filterTagText, { color: '#4FC3F7' }]}>Name: {filterByName}</Text>
+                  </View>
+              )}
+              {filterByDate && (
+                  <View style={[localStyles.filterTag, { backgroundColor: 'rgba(52, 152, 219, 0.2)' }]}>
+                    <Text style={[localStyles.filterTagText, { color: '#4FC3F7' }]}>Date: {filterByDate}</Text>
+                  </View>
+              )}
+              {filterByTime && (
+                  <View style={[localStyles.filterTag, { backgroundColor: 'rgba(52, 152, 219, 0.2)' }]}>
+                    <Text style={[localStyles.filterTagText, { color: '#4FC3F7' }]}>
+                      Time: {timeFilterType} {filterByTime}
+                    </Text>
+                  </View>
+              )}
+              <TouchableOpacity onPress={resetFilters}>
+                <Text style={[localStyles.clearFiltersText, { color: '#4FC3F7' }]}>Clear all</Text>
+              </TouchableOpacity>
+            </View>
+        )}
+
+        {/* Empty State */}
+        {filteredResults.length === 0 && (
+            <View style={[localStyles.emptyCard, { backgroundColor: 'rgba(40, 40, 40, 0.85)' }]}>
+              <Text style={[localStyles.emptyText, { color: '#fff' }]}>No matching activities found.</Text>
+              <Text style={[localStyles.emptySubtext, { color: '#95A5A6' }]}>
+                {aiResults.length > 0
+                    ? "Try adjusting your search or filters."
+                    : "Activities will appear here once detected."}
+              </Text>
+            </View>
+        )}
+
+        {/* Results Header */}
+        {filteredResults.length > 0 && (
+            <View style={[localStyles.historyHeader, { backgroundColor: 'rgba(40, 40, 40, 0.85)' }]}>
+              <Text style={[localStyles.cardTitle, { color: '#fff' }]}>Detected Activities</Text>
+              <Text style={[localStyles.resultCount, { color: '#95A5A6' }]}>
+                {filteredResults.length} results
+              </Text>
+            </View>
+        )}
+      </>
   );
 
-  // Render individual history items
   const renderHistoryItem = ({ item }) => (
-    <View style={styles.historyItem}>
-      <Text style={styles.aiTimestamp}>{item.timestamp}</Text>
-      <Text style={styles.historyPrediction}>{item.prediction}</Text>
-      <Text style={styles.historyF1_Score}>F1_Score: {item.F1_Score}</Text>
-    </View>
+      <View style={[localStyles.historyItem, { backgroundColor: 'rgba(40, 40, 40, 0.85)' }]}>
+        <Text style={[localStyles.aiTimestamp, { color: '#95A5A6' }]}>{item.timestamp}</Text>
+        <Text style={[localStyles.historyPrediction, { color: '#fff' }]}>{item.prediction}</Text>
+        <Text style={[localStyles.historyF1_Score, { color: '#F1C40F' }]}>
+          F1 score: {item.F1_Score}
+        </Text>
+      </View>
   );
 
   return (
-    <>
-      <FlatList
-        data={filteredResults}
-        keyExtractor={(item, index) => `ai-history-${index}`}
-        renderItem={renderHistoryItem}
-        ListHeaderComponent={renderHeader}
-        contentContainerStyle={styles.container}
-        ListEmptyComponent={null} // We handle the empty state in the header
-      />
-      
-      {/* Filter Modal */}
-      <Modal
-        visible={showFilterModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowFilterModal(false)}
+      <ImageBackground
+          source={require("../assets/DarkMode.png")}
+          style={localStyles.background}
+          resizeMode="cover"
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filter Results</Text>
-              <TouchableOpacity onPress={() => setShowFilterModal(false)}>
-                <Ionicons name="close" size={24} color="#333" />
-              </TouchableOpacity>
-            </View>
-            
-            <ScrollView style={styles.modalScrollView}>
-              {/* Filter by activity name */}
-              <View style={styles.filterSection}>
-                <Text style={styles.filterLabel}>Activity Name</Text>
-                <TextInput
-                  style={styles.filterInput}
-                  placeholder="Filter by activity name"
-                  value={filterByName}
-                  onChangeText={setFilterByName}
-                />
-              </View>
-              
-              {/* Filter by date */}
-              <View style={styles.filterSection}>
-                <Text style={styles.filterLabel}>Date</Text>
-                <TextInput
-                  style={styles.filterInput}
-                  placeholder="YYYY-MM-DD"
-                  value={filterByDate}
-                  onChangeText={setFilterByDate}
-                />
-              </View>
-              
-              {/* Filter by time */}
-              <View style={styles.filterSection}>
-                <Text style={styles.filterLabel}>Time</Text>
-                <View style={styles.timeFilterRow}>
-                  <TouchableOpacity
-                    style={[
-                      styles.timeFilterButton,
-                      timeFilterType === 'before' && styles.timeFilterButtonActive
-                    ]}
-                    onPress={() => setTimeFilterType('before')}
-                  >
-                    <Text style={[
-                      styles.timeFilterText,
-                      timeFilterType === 'before' && styles.timeFilterTextActive
-                    ]}>Before</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[
-                      styles.timeFilterButton,
-                      timeFilterType === 'after' && styles.timeFilterButtonActive
-                    ]}
-                    onPress={() => setTimeFilterType('after')}
-                  >
-                    <Text style={[
-                      styles.timeFilterText,
-                      timeFilterType === 'after' && styles.timeFilterTextActive
-                    ]}>After</Text>
+        <SafeAreaView style={localStyles.safeArea}>
+          <FlatList
+              data={filteredResults}
+              keyExtractor={(item, index) => `ai-history-${index}`}
+              renderItem={renderHistoryItem}
+              ListHeaderComponent={renderHeader}
+              contentContainerStyle={localStyles.content}
+          />
+
+          {/* Filter Modal */}
+          <Modal
+              visible={showFilterModal}
+              transparent={true}
+              animationType="slide"
+              onRequestClose={() => setShowFilterModal(false)}
+          >
+            <View style={localStyles.modalOverlay}>
+              <View style={[localStyles.modalContent, { backgroundColor: 'rgba(40, 40, 40, 0.95)' }]}>
+                <View style={localStyles.modalHeader}>
+                  <Text style={[localStyles.modalTitle, { color: '#fff' }]}>Filter Results</Text>
+                  <TouchableOpacity onPress={() => setShowFilterModal(false)}>
+                    <Text style={{ color: '#fff' }}>✕</Text>
                   </TouchableOpacity>
                 </View>
-                <TextInput
-                  style={styles.filterInput}
-                  placeholder="HH:MM AM/PM"
-                  value={filterByTime}
-                  onChangeText={setFilterByTime}
-                />
+
+                <ScrollView style={localStyles.modalScrollView}>
+                  {/* Filter sections with dark theme styling */}
+                  <View style={localStyles.filterSection}>
+                    <Text style={[localStyles.filterLabel, { color: '#fff' }]}>Activity Name</Text>
+                    <TextInput
+                        style={[localStyles.filterInput, {
+                          backgroundColor: 'rgba(255,255,255,0.1)',
+                          color: '#fff'
+                        }]}
+                        placeholder="Filter by activity name"
+                        placeholderTextColor="#95A5A6"
+                        value={filterByName}
+                        onChangeText={setFilterByName}
+                    />
+                  </View>
+
+                  <View style={localStyles.filterSection}>
+                    <Text style={[localStyles.filterLabel, { color: '#fff' }]}>Date</Text>
+                    <TextInput
+                        style={[localStyles.filterInput, {
+                          backgroundColor: 'rgba(255,255,255,0.1)',
+                          color: '#fff'
+                        }]}
+                        placeholder="YYYY-MM-DD"
+                        placeholderTextColor="#95A5A6"
+                        value={filterByDate}
+                        onChangeText={setFilterByDate}
+                    />
+                  </View>
+
+                  <View style={localStyles.filterSection}>
+                    <Text style={[localStyles.filterLabel, { color: '#fff' }]}>Time</Text>
+                    <View style={localStyles.timeFilterRow}>
+                      <TouchableOpacity
+                          style={[
+                            localStyles.timeFilterButton,
+                            timeFilterType === 'before' && localStyles.timeFilterButtonActive
+                          ]}
+                          onPress={() => setTimeFilterType('before')}
+                      >
+                        <Text style={[
+                          localStyles.timeFilterText,
+                          timeFilterType === 'before' && localStyles.timeFilterTextActive
+                        ]}>Before</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                          style={[
+                            localStyles.timeFilterButton,
+                            timeFilterType === 'after' && localStyles.timeFilterButtonActive
+                          ]}
+                          onPress={() => setTimeFilterType('after')}
+                      >
+                        <Text style={[
+                          localStyles.timeFilterText,
+                          timeFilterType === 'after' && localStyles.timeFilterTextActive
+                        ]}>After</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <TextInput
+                        style={[localStyles.filterInput, {
+                          backgroundColor: 'rgba(255,255,255,0.1)',
+                          color: '#fff'
+                        }]}
+                        placeholder="HH:MM AM/PM"
+                        placeholderTextColor="#95A5A6"
+                        value={filterByTime}
+                        onChangeText={setFilterByTime}
+                    />
+                  </View>
+                </ScrollView>
+
+                <View style={localStyles.modalFooter}>
+                  <TouchableOpacity
+                      style={[localStyles.resetButton, { borderColor: '#4FC3F7' }]}
+                      onPress={resetFilters}
+                  >
+                    <Text style={[localStyles.resetButtonText, { color: '#4FC3F7' }]}>Reset</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                      style={[localStyles.applyButton, { backgroundColor: '#4FC3F7' }]}
+                      onPress={() => setShowFilterModal(false)}
+                  >
+                    <Text style={[localStyles.applyButtonText, { color: '#fff' }]}>Apply</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </ScrollView>
-            
-            <View style={styles.modalFooter}>
-              <TouchableOpacity 
-                style={styles.resetButton} 
-                onPress={resetFilters}
-              >
-                <Text style={styles.resetButtonText}>Reset</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.applyButton}
-                onPress={() => setShowFilterModal(false)}
-              >
-                <Text style={styles.applyButtonText}>Apply</Text>
-              </TouchableOpacity>
             </View>
-          </View>
-        </View>
-      </Modal>
-    </>
+          </Modal>
+        </SafeAreaView>
+      </ImageBackground>
   );
 }
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
   container: {
-    padding: 20,
-    backgroundColor: '#F9F9F9',
-    flexGrow: 1,
+    padding: 16,
+    paddingBottom: 32,
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    padding: 16,
+    borderRadius: 12,
+    margin: 16,
+    marginBottom: 0,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  backButton: {
-    marginRight: 10,
-  },
-  title: {
-    fontSize: 28,
+  headerTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
+    color:"white"
   },
-  subtitle: {
-    color: '#666',
-    fontSize: 16,
-    marginBottom: 20,
+  content: {
+    padding: 16,
+    paddingBottom: 32,
   },
-  
-  // Search bar styles
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    margin: 16,
+    marginTop: 8,
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  searchIcon: {
-    marginRight: 8,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
   },
   filterButton: {
     marginLeft: 10,
     padding: 10,
-    backgroundColor: '#fff',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  
-  // Active filters styles
   activeFilters: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    marginBottom: 15,
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   activeFiltersText: {
     fontSize: 14,
-    color: '#666',
     marginRight: 8,
   },
   filterTag: {
-    backgroundColor: '#e1f0ff',
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -411,125 +404,73 @@ const styles = StyleSheet.create({
   },
   filterTagText: {
     fontSize: 12,
-    color: '#3498db',
   },
   clearFiltersText: {
     fontSize: 14,
-    color: '#3498db',
     marginLeft: 5,
   },
-  
-  // Date card styles
-  dateCard: {
-    width: '100%',
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 4,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
+  emptyCard: {
+    borderRadius: 16,
+    padding: 30,
+    margin: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    textAlign: 'center',
   },
   historyHeader: {
-    width: '100%',
-    backgroundColor: '#F5F5F5',
     borderRadius: 12,
     padding: 16,
+    margin: 16,
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 2,
-    borderLeftWidth: 4,
-    borderLeftColor: '#9E9E9E',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  resultCount: {
-    fontSize: 12,
-    color: '#666',
-  },
-  emptyCard: {
-    width: '100%',
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 30,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: '#9E9E9E',
-  },
   cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333',
   },
-  date: {
-    fontSize: 14,
-    color: '#555',
-    marginBottom: 16,
+  resultCount: {
+    fontSize: 12,
   },
   historyItem: {
-    padding: 15,
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
     marginBottom: 8,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 6,
-    borderLeftWidth: 3,
-    borderLeftColor: '#9E9E9E',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   aiTimestamp: {
     fontSize: 12,
-    color: '#666',
     marginBottom: 4,
   },
   historyPrediction: {
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 3,
-    color: '#555',
   },
   historyF1_Score: {
     fontSize: 12,
-    color: '#777',
   },
-  emptyText: {
-    fontSize: 16,
-    color: '#555',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-  },
-  
-  // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingVertical: 20,
@@ -543,12 +484,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
   },
   modalScrollView: {
     maxHeight: 450,
@@ -559,16 +499,14 @@ const styles = StyleSheet.create({
   filterLabel: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333',
     marginBottom: 8,
   },
   filterInput: {
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   timeFilterRow: {
     flexDirection: 'row',
@@ -579,18 +517,20 @@ const styles = StyleSheet.create({
     padding: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: 'rgba(255,255,255,0.1)',
     marginRight: 5,
+    borderRadius: 8,
   },
   timeFilterButtonActive: {
-    backgroundColor: '#3498db',
-    borderColor: '#3498db',
+    backgroundColor: 'rgba(79, 195, 247, 0.2)',
+    borderColor: '#4FC3F7',
   },
   timeFilterText: {
-    color: '#333',
+    color: '#fff',
   },
   timeFilterTextActive: {
-    color: '#fff',
+    color: '#4FC3F7',
+    fontWeight: 'bold',
   },
   modalFooter: {
     flexDirection: 'row',
@@ -598,26 +538,22 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: 'rgba(255,255,255,0.1)',
   },
   resetButton: {
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
     marginRight: 10,
   },
   resetButtonText: {
-    color: '#333',
     fontSize: 16,
   },
   applyButton: {
-    backgroundColor: '#3498db',
     padding: 12,
     borderRadius: 8,
   },
   applyButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '500',
   },
