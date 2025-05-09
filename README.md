@@ -75,5 +75,5 @@ Also includes timestamps and handles errors gracefully.
 
             Execution:
 
-The Flask server listens on port 5000 (or from env variable) and waits for incoming prediction requests.
+The Flask server listens on port 5000  and waits for incoming prediction requests.
 
