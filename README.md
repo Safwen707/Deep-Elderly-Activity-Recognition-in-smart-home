@@ -1,5 +1,6 @@
 # Deep-Human-Activity-Recognition-in-smart-home
 ## Dataset Setup
+## Dataset Setup
 
 1. Download the JSON file from Kaggle:  
    - https://www.kaggle.com/datasets/safweneessayes/m-and-d-sensors  
@@ -12,7 +13,7 @@ https://www.kaggle.com/datasets/safweneessayes/m-and-d-sensors-labeled-allsensor
 https://www.kaggle.com/datasets/safweneessayes/featureextracted-allsensors-extendedtimefeatures
 
  This file contains the X and y vector : input of LSTM
- 
+
 
 
 
