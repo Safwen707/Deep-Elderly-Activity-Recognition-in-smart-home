@@ -11,7 +11,7 @@ https://www.kaggle.com/datasets/safweneessayes/m-and-d-sensors-labeled-allsensor
  3. Download the  featureExtracted_AllSensors_ExtendedTimeFeatures.txt file from Kaggle: 
 https://www.kaggle.com/datasets/safweneessayes/featureextracted-allsensors-extendedtimefeatures
 
- This file contains the X and y vector :input of lstm
+ This file contains the X and y vector : input of LSTM
  
 
 
